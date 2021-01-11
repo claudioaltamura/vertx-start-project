@@ -90,7 +90,7 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   private void pageRenderingHandler(RoutingContext routingContext) {
-    String page = context.request().getParam("page");
+    String page = routingContext.request().getParam("page");
     dbClient.getConnection(car -> {
       if (car.succeeded()) {
         SQLConnection connection = car.result();
@@ -109,20 +109,20 @@ public class MainVerticle extends AbstractVerticle {
             context.put("rawContent", rawContent);
             context.put("content", Processor.process(rawContent));
             context.put("timestamp", new Date().toString());
-            templateEngine.render(context.data(), "templates/page.ftl", ar -> {
+            templateEngine.render(routingContext.data(), "templates/page.ftl", ar -> {
               if (ar.succeeded()) {
-                context.response().putHeader("Content-Type", "text/html");
-                context.response().end(ar.result());
+                routingContext.response().putHeader("Content-Type", "text/html");
+                routingContext.response().end(ar.result());
               } else {
-                context.fail(ar.cause());
+                routingContext.fail(ar.cause());
               }
             });
           } else {
-            context.fail(fetch.cause());
+            routingContext.fail(fetch.cause());
           }
         });
       } else {
-        context.fail(car.cause());
+       	routingContext.fail(car.cause());
       }
     });
   }
@@ -167,6 +167,26 @@ public class MainVerticle extends AbstractVerticle {
     });
   }
 
+	private void pageDeletionHandler(RoutingContext context) {
+		String id = context.request().getParam("id");
+		dbClient.getConnection(car -> {
+			if (car.succeeded()) {
+				SQLConnection connection = car.result();
+				connection.updateWithParams(SQL_DELETE_PAGE, new JsonArray().add(id), res -> {
+					connection.close();
+					if (res.succeeded()) {
+						context.response().setStatusCode(303);
+						context.response().putHeader("Location", "/");
+						context.response().end();
+					} else {
+						context.fail(res.cause());
+					}
+				});
+			} else {
+				context.fail(car.cause());
+			}
+		});
+	}
 
   private void indexHandler(RoutingContext context) {
     dbClient.getConnection(car -> {

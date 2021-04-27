@@ -11,3 +11,5 @@ buildNumber.properties
 .mvn/wrapper/maven-wrapper.jar
 /.idea/
 /vertx-start-project.iml
+/db/
+/.mvn/wrapper/wrapper.iml
